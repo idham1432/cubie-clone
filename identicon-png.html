@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Identicon Generator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Identicon Generator</h1>
+  <canvas id="identicon" width="250" height="250"></canvas>
+  <br>
+  <button onclick="generateIdenticon()">Generate</button>
+  <button onclick="downloadPNG()">Download PNG</button>
+
+  <script>
+    const canvas = document.getElementById('identicon');
+    const ctx = canvas.getContext('2d');
+
+    function generateIdenticon() {
+      const size = 5;
+      const cellSize = canvas.width / size;
+      const color = getRandomColor();
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Ensures transparency
+
+      const pattern = [];
+      for (let row = 0; row < size; row++) {
+        pattern[row] = [];
+        for (let col = 0; col < Math.ceil(size / 2); col++) {
+          const fill = Math.random() < 0.5;
+          pattern[row][col] = fill;
+          pattern[row][size - col - 1] = fill; // mirror horizontally
+        }
+      }
+
+      for (let row = 0; row < size; row++) {
+        for (let col = 0; col < size; col++) {
+          if (pattern[row][col]) {
+            ctx.fillStyle = color;
+            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+    }
+
+    function getRandomColor() {
+      const hue = Math.floor(Math.random() * 360);
+      return `hsl(${hue}, 70%, 50%)`; // vibrant colors
+    }
+
+    function downloadPNG() {
+      const link = document.createElement('a');
+      link.download = 'identicon.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    generateIdenticon(); // generate one on page load
+  </script>
+
+</body>
+</html>

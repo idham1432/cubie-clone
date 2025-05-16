@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Identicon Generator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 40px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+    button {
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Identicon Generator</h1>
+  <input type="text" id="inputText" placeholder="Enter your name or email" />
+  <br/>
+  <button onclick="generateIdenticon()">Generate</button>
+  <button onclick="downloadPNG()">Download PNG</button>
+  <button onclick="downloadSVG()">Download SVG</button>
+  <br/>
+  <canvas id="identicon" width="250" height="250"></canvas>
+
+  <script>
+    const size = 5;
+    const canvas = document.getElementById('identicon');
+    const ctx = canvas.getContext('2d');
+    const blockSize = canvas.width / size;
+    let currentPattern = [];
+    let currentColor = '#000';
+
+    function simpleHash(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return hash;
+    }
+
+    function hashToColor(hash) {
+    const hue = Math.abs(hash) % 360;
+    const saturation = 75; // % for vibrant colors
+    const lightness = 55;  // % for balanced brightness
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
+
+    function generatePattern(hash) {
+      const pattern = [];
+      for (let i = 0; i < size; i++) {
+        pattern[i] = [];
+        for (let j = 0; j < Math.ceil(size / 2); j++) {
+          const value = ((hash >> (i * size + j)) & 1) === 1;
+          pattern[i][j] = value;
+          pattern[i][size - 1 - j] = value;
+        }
+      }
+      return pattern;
+    }
+
+    function drawPattern(pattern, color) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          ctx.fillStyle = pattern[y][x] ? color : '#fff';
+          ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+        }
+      }
+    }
+
+    function generateIdenticon() {
+      const input = document.getElementById('inputText').value || 'default';
+      const hash = simpleHash(input);
+      currentColor = hashToColor(hash);
+      currentPattern = generatePattern(hash);
+      drawPattern(currentPattern, currentColor);
+    }
+
+    function downloadPNG() {
+      const link = document.createElement('a');
+      link.download = 'identicon.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function downloadSVG() {
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svgSize = 250;
+      const block = svgSize / size;
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("width", svgSize);
+      svg.setAttribute("height", svgSize);
+      svg.setAttribute("xmlns", svgNS);
+
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          if (currentPattern[y][x]) {
+            const rect = document.createElementNS(svgNS, "rect");
+            rect.setAttribute("x", x * block);
+            rect.setAttribute("y", y * block);
+            rect.setAttribute("width", block);
+            rect.setAttribute("height", block);
+            rect.setAttribute("fill", currentColor);
+            svg.appendChild(rect);
+          }
+        }
+      }
+
+      const svgBlob = new Blob([svg.outerHTML], { type: "image/svg+xml;charset=utf-8" });
+      const svgUrl = URL.createObjectURL(svgBlob);
+
+      const link = document.createElement("a");
+      link.href = svgUrl;
+      link.download = "identicon.svg";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>

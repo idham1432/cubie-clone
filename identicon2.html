@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>10x10 Identicon Generator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 40px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>10x10 Identicon Generator</h1>
+  <input type="text" id="inputText" placeholder="Enter text" />
+  <button onclick="generate()">Generate</button>
+  <br><br>
+  <canvas id="identicon" width="400" height="400"></canvas>
+
+  <script>
+    function generate() {
+      const input = document.getElementById('inputText').value || 'default';
+      const canvas = document.getElementById('identicon');
+      const ctx = canvas.getContext('2d');
+
+      const gridSize = 10;
+      const innerSize = 8;
+      const cellSize = canvas.width / gridSize;
+
+      // Hash input using a simple hash function
+      function hashCode(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = str.charCodeAt(i) + ((hash << 5) - hash);
+          hash = hash & hash; // Convert to 32bit integer
+        }
+        return hash;
+      }
+
+      const hash = hashCode(input);
+      const random = (seed => () => {
+        seed ^= seed << 13;
+        seed ^= seed >> 17;
+        seed ^= seed << 5;
+        return (seed < 0 ? ~seed + 1 : seed) % 1000 / 1000;
+      })(hash);
+
+      // Random background and fill color
+      const bgColor = `hsl(${Math.floor(random() * 360)}, 30%, 90%)`;
+      const fillColor = `hsl(${Math.floor(random() * 360)}, 70%, 50%)`;
+
+      // Fill background
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw 8x8 inside the 10x10 grid (leave 1-cell border)
+      const pattern = [];
+      for (let y = 0; y < innerSize; y++) {
+        const row = [];
+        for (let x = 0; x < 4; x++) {
+          // Only generate for half, mirror the rest
+          row.push(random() > 0.5);
+        }
+        const mirrored = [...row, ...row.slice().reverse()];
+        pattern.push(mirrored);
+      }
+
+      // Draw pattern
+      ctx.fillStyle = fillColor;
+      for (let y = 0; y < innerSize; y++) {
+        for (let x = 0; x < innerSize; x++) {
+          if (pattern[y][x]) {
+            ctx.fillRect(
+              (x + 1) * cellSize,
+              (y + 1) * cellSize,
+              cellSize,
+              cellSize
+            );
+          }
+        }
+      }
+    }
+
+    // Generate default identicon on load
+    generate();
+  </script>
+</body>
+</html>
